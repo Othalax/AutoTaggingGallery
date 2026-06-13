@@ -92,7 +92,7 @@ class DatabaseManager:
 
         except sqlite3.Error as e:
             conn.rollback()
-            print(f"Błąd bazy danych podczas dodawania zdjęcia: {e}")
+            print(f"Database error while adding a photo: {e}")
             raise e
         finally:
             conn.close()

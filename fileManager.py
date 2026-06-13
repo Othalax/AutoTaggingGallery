@@ -12,13 +12,13 @@ class FileManager:
 
     def validate_file(self, source_path):
         if not os.path.exists(source_path):
-            raise FileNotFoundError(f"Wybrany plik nie istnieje: {source_path}")
+            raise FileNotFoundError(f"Selected file does not exist: {source_path}")
 
         valid_extensions = ('.jpg', '.png')
         ext = os.path.splitext(source_path)[1].lower()
 
         if ext not in valid_extensions:
-            raise ValueError(f"Niepoprawny format pliku. Akceptowane: {', '.join(valid_extensions)}")
+            raise ValueError(f"Invalid file format. Accepted: {', '.join(valid_extensions)}")
 
         return ext
 
