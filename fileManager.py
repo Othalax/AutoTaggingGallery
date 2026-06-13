@@ -37,21 +37,20 @@ class FileManager:
     def get_full_path(self, stored_name):
         return os.path.join(self.storage_dir, stored_name)
 
-    def get_photos(self, batch_size=8):
-        if not os.path.exists(self.storage_dir):
-            return
-
-        valid_extensions = ('.jpg', '.png')
+    def get_photos_by_lazy_generator(self, photos_metadata, batch_size, database_manager):
         current_batch = []
 
-        for file_name in os.listdir(self.storage_dir):
-            if os.path.splitext(file_name)[1].lower() in valid_extensions:
-                full_path = os.path.join(self.storage_dir, file_name)
-                current_batch.append(full_path)
+        for photo in photos_metadata:
+            full_path = self.get_full_path(photo['stored_name'])
 
-                if len(current_batch) == batch_size:
-                    yield current_batch
-                    current_batch = []
+            if not os.path.exists(full_path):
+                database_manager.delete_photo(photo['id'])
+                continue
+
+            current_batch.append(full_path)
+            if len(current_batch) == batch_size:
+                yield current_batch
+                current_batch = []
 
         if current_batch:
             yield current_batch

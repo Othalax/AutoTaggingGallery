@@ -109,7 +109,7 @@ class DatabaseManager:
         """
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute(query, (f"%{tag_name}%",))
+            cursor.execute(query, (f"{tag_name}",))
             return [dict(row) for row in cursor.fetchall()]
 
     def get_tags_for_photo(self, photo_id):
@@ -123,3 +123,21 @@ class DatabaseManager:
             cursor = conn.cursor()
             cursor.execute(query, (photo_id,))
             return [row["tag_name"] for row in cursor.fetchall()]
+
+    def get_all_photos(self):
+        query = """
+            SELECT id, original_name, stored_name, upload_date 
+            FROM photos 
+            ORDER BY id DESC
+        """
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(query)
+            return [dict(row) for row in cursor.fetchall()]
+
+    def delete_photo(self, photo_id):
+        query = "DELETE FROM photos WHERE id = ?"
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(query, (photo_id,))
+            conn.commit()
