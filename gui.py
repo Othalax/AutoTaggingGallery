@@ -1,7 +1,7 @@
 import sys
 from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLineEdit, QGridLayout, QFileDialog,
-                               QScrollArea, QLabel)
+                               QScrollArea, QLabel, QMenu)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 import database
@@ -94,6 +94,8 @@ class AutoTaggingGallery(QMainWindow):
 
     def add_photo_to_grid(self, filepath):
         label = QLabel()
+        label.setProperty("filepath", filepath)
+        label.installEventFilter(self)
         pixmap = QPixmap(filepath)
 
         size = min(pixmap.width(), pixmap.height())
@@ -118,6 +120,33 @@ class AutoTaggingGallery(QMainWindow):
         if self.current_col >= self.max_columns:
             self.current_col = 0
             self.current_row += 1
+
+    def eventFilter(self, watched, event):
+        if event.type() == event.Type.MouseButtonPress:
+            mouse_event = event
+            if mouse_event.button() == Qt.MouseButton.RightButton:
+                filepath = watched.property("filepath")
+                if filepath:
+                    self.show_image_options(filepath)
+                    return True
+
+        return super().eventFilter(watched, event)
+
+    def show_image_options(self, filepath):
+        menu = QMenu(self)
+        action_view = menu.addAction("Show details")
+        action_delete = menu.addAction("Delete")
+
+        action = menu.exec(self.cursor().pos())
+
+        if action == action_view:
+            print(f"Details for {filepath}")
+        elif action == action_delete:
+            self.delete_image(filepath)
+
+    def delete_image(self, filepath):
+        fileManager.delete_photo(filepath, database_manager, self.current_photos)
+        self.update_photos_list()
 
     def clear_gallery(self):
         while self.gallery_layout.count():

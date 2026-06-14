@@ -16,6 +16,27 @@ def validate_file(source_path):
     return ext
 
 
+def delete_photo(filepath, database_manager, photos_metadata):
+    stored_name = os.path.basename(filepath)
+
+    photo_id = None
+    for photo in photos_metadata:
+        if photo['stored_name'] == stored_name:
+            photo_id = photo['id']
+            break
+
+    if photo_id is not None:
+        database_manager.delete_photo(photo_id)
+    else:
+        raise KeyError(f"No photo named {stored_name} in database.")
+
+    if os.path.exists(filepath):
+        try:
+            os.remove(filepath)
+        except OSError as e:
+            print(f"Error deleting file from disk: {e}")
+
+
 class FileManager:
     def __init__(self, app_name="AutoTaggingGallery"):
         appdata_dir = os.getenv('APPDATA')
