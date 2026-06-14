@@ -3,6 +3,19 @@ import shutil
 import uuid
 
 
+def validate_file(source_path):
+    if not os.path.exists(source_path):
+        raise FileNotFoundError(f"Selected file does not exist: {source_path}")
+
+    valid_extensions = ('.jpg', '.png')
+    ext = os.path.splitext(source_path)[1].lower()
+
+    if ext not in valid_extensions:
+        raise ValueError(f"Invalid file format. Accepted: {', '.join(valid_extensions)}")
+
+    return ext
+
+
 class FileManager:
     def __init__(self, app_name="AutoTaggingGallery"):
         appdata_dir = os.getenv('APPDATA')
@@ -10,20 +23,8 @@ class FileManager:
         self.storage_dir = os.path.join(appdata_dir, app_name, "photos")
         os.makedirs(self.storage_dir, exist_ok=True)
 
-    def validate_file(self, source_path):
-        if not os.path.exists(source_path):
-            raise FileNotFoundError(f"Selected file does not exist: {source_path}")
-
-        valid_extensions = ('.jpg', '.png')
-        ext = os.path.splitext(source_path)[1].lower()
-
-        if ext not in valid_extensions:
-            raise ValueError(f"Invalid file format. Accepted: {', '.join(valid_extensions)}")
-
-        return ext
-
     def import_photo(self, source_path):
-        ext = self.validate_file(source_path)
+        ext = validate_file(source_path)
 
         original_name = os.path.basename(source_path)
 
@@ -37,7 +38,7 @@ class FileManager:
     def get_full_path(self, stored_name):
         return os.path.join(self.storage_dir, stored_name)
 
-    def get_photos_by_lazy_generator(self, photos_metadata, batch_size, database_manager):
+    def get_photos(self, photos_metadata, batch_size, database_manager):
         current_batch = []
 
         for photo in photos_metadata:

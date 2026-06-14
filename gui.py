@@ -109,7 +109,7 @@ class AutoTaggingGallery(QMainWindow):
         )
 
         label.setPixmap(scaled_pixmap)
-        label.setStyleSheet("border: 1px solid #ccc; padding: 5px; background: #f0f0f0;")
+        label.setStyleSheet("border: 1px solid #ccc; padding: 1px; background: #f0f0f0;")
         label.setFixedSize(100, 100)
 
         self.gallery_layout.addWidget(label, self.current_row, self.current_col)
@@ -147,7 +147,7 @@ class AutoTaggingGallery(QMainWindow):
         else:
             self.current_photos = database_manager.get_all_photos()
 
-        self.photo_generator = file_manager.get_photos_by_lazy_generator(
+        self.photo_generator = file_manager.get_photos(
             self.current_photos, batch_size=16, database_manager=database_manager
         )
 

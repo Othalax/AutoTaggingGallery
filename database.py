@@ -92,8 +92,7 @@ class DatabaseManager:
 
         except sqlite3.Error as e:
             conn.rollback()
-            print(f"Database error while adding a photo: {e}")
-            raise e
+            raise sqlite3.Error(f"Database error while adding a photo: {e}")
         finally:
             conn.close()
 
@@ -111,18 +110,6 @@ class DatabaseManager:
             cursor = conn.cursor()
             cursor.execute(query, (f"{tag_name}",))
             return [dict(row) for row in cursor.fetchall()]
-
-    def get_tags_for_photo(self, photo_id):
-        query = """
-            SELECT t.tag_name 
-            FROM tags t
-            JOIN photo_tags pt ON t.id = pt.tag_id
-            WHERE pt.photo_id = ?
-        """
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(query, (photo_id,))
-            return [row["tag_name"] for row in cursor.fetchall()]
 
     def get_all_photos(self):
         query = """
