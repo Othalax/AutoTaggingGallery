@@ -1,13 +1,50 @@
 import sys
 from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLineEdit, QGridLayout, QFileDialog,
-                               QScrollArea, QLabel, QMenu)
+                               QScrollArea, QLabel, QMenu, QDialog)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 import database
 import fileManager
 import detection
 
+
+class PhotoDetails(QDialog):
+    def __init__(self, filepath):
+        super().__init__()
+        self.setWindowTitle("Photo details")
+        self.resize(300, 200)
+
+        layout = QVBoxLayout()
+
+        label = QLabel()
+        pixmap = QPixmap(filepath)
+        scaled_pixmap = pixmap.scaled(
+            500,
+            500,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation
+        )
+        label.setPixmap(scaled_pixmap)
+        tags_list = database_manager.get_tags_for_photo(filepath)
+        tags_str = ""
+        for tag in tags_list:
+            if tags_str:
+                tags_str += ", "
+            tags_str += tag
+        tags = QLabel("Tags: " + tags_str)
+        download_button = QPushButton("Download photo")
+
+        layout.addWidget(label)
+        layout.addWidget(tags)
+        layout.addWidget(download_button)
+
+        self.setLayout(layout)
+
+        download_button.clicked.connect(self.download_photo)
+
+    def download_photo(self):
+        pass
 
 class AutoTaggingGallery(QMainWindow):
     def __init__(self):
@@ -49,6 +86,8 @@ class AutoTaggingGallery(QMainWindow):
         self.current_photos = []
         self.photo_generator = None
         self.update_photos_list()
+
+        self.photo_details = None
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -140,9 +179,13 @@ class AutoTaggingGallery(QMainWindow):
         action = menu.exec(self.cursor().pos())
 
         if action == action_view:
-            print(f"Details for {filepath}")
+            self.show_image_details(filepath)
         elif action == action_delete:
             self.delete_image(filepath)
+
+    def show_image_details(self, filepath):
+        self.photo_details = PhotoDetails(filepath)
+        self.photo_details.exec()
 
     def delete_image(self, filepath):
         fileManager.delete_photo(filepath, database_manager, self.current_photos)

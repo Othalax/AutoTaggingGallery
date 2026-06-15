@@ -1,5 +1,6 @@
 import sqlite3
 from datetime import datetime
+import os
 
 
 class DatabaseManager:
@@ -110,6 +111,20 @@ class DatabaseManager:
             cursor = conn.cursor()
             cursor.execute(query, (f"{tag_name}",))
             return [dict(row) for row in cursor.fetchall()]
+
+    def get_tags_for_photo(self, filepath):
+        stored_name = os.path.basename(filepath)
+        query = """
+            SELECT t.tag_name 
+            FROM tags t
+            JOIN photo_tags pt ON t.id = pt.tag_id
+            JOIN photos p ON pt.photo_id = p.id
+            WHERE p.stored_name = ?
+        """
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(query, (stored_name,))
+            return [row["tag_name"] for row in cursor.fetchall()]
 
     def get_all_photos(self):
         query = """
