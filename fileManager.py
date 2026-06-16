@@ -37,11 +37,18 @@ def delete_photo(filepath, database_manager, photos_metadata):
             print(f"Error deleting file from disk: {e}")
 
 
+def export_photo(source_path, destination_path):
+    if not os.path.exists(source_path):
+        raise FileNotFoundError(f"Source file does not exist: {source_path}")
+
+    shutil.copy(source_path, destination_path)
+
+
 class FileManager:
-    def __init__(self, app_name="AutoTaggingGallery"):
+    def __init__(self):
         appdata_dir = os.getenv('APPDATA')
 
-        self.storage_dir = os.path.join(appdata_dir, app_name, "photos")
+        self.storage_dir = os.path.join(appdata_dir, "AutoTaggingGallery", "photos")
         os.makedirs(self.storage_dir, exist_ok=True)
 
     def import_photo(self, source_path):
@@ -76,3 +83,4 @@ class FileManager:
 
         if current_batch:
             yield current_batch
+

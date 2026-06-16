@@ -6,7 +6,8 @@ import os
 class DatabaseManager:
 
     def __init__(self, db_path="gallery.db"):
-        self.db_path = db_path
+        appdata_dir = os.getenv('APPDATA')
+        self.db_path = os.path.join(appdata_dir, "AutoTaggingGallery", db_path)
         self.create_tables()
 
     def get_connection(self):
@@ -143,3 +144,13 @@ class DatabaseManager:
             cursor = conn.cursor()
             cursor.execute(query, (photo_id,))
             conn.commit()
+
+    def get_original_name(self, filepath):
+        stored_name = os.path.basename(filepath)
+        query = "SELECT original_name FROM photos WHERE stored_name = ?"
+
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(query, (stored_name,))
+            row = cursor.fetchone()
+            return row["original_name"]

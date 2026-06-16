@@ -1,8 +1,11 @@
 from ultralytics import YOLO
+import os
 
 class Detector:
     def __init__(self):
-        self.model = YOLO('yolov8n-oiv7.pt')
+        appdata_dir = os.getenv('APPDATA')
+        self.storage_dir = os.path.join(appdata_dir, "AutoTaggingGallery", 'yolov8n-oiv7.pt')
+        self.model = YOLO(self.storage_dir)
 
     def detect_tags(self, filepath):
         results = self.model(filepath)

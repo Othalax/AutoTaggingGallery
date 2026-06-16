@@ -1,7 +1,7 @@
 import sys
 from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLineEdit, QGridLayout, QFileDialog,
-                               QScrollArea, QLabel, QMenu, QDialog)
+                               QScrollArea, QLabel, QMenu, QDialog, QMessageBox)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 import database
@@ -14,6 +14,7 @@ class PhotoDetails(QDialog):
         super().__init__()
         self.setWindowTitle("Photo details")
         self.resize(300, 200)
+        self.filepath = filepath
 
         layout = QVBoxLayout()
 
@@ -44,7 +45,21 @@ class PhotoDetails(QDialog):
         download_button.clicked.connect(self.download_photo)
 
     def download_photo(self):
-        pass
+        original_name = database_manager.get_original_name(self.filepath)
+
+
+        dest_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Download Photo",
+            original_name
+        )
+
+        if dest_path:
+            try:
+                fileManager.export_photo(self.filepath, dest_path)
+                QMessageBox.information(self, "Success", "Photo downloaded successfully!")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Could not download photo: {e}")
 
 class AutoTaggingGallery(QMainWindow):
     def __init__(self):
@@ -202,12 +217,13 @@ class AutoTaggingGallery(QMainWindow):
         self.current_col = 0
 
     def add_file(self):
-        filepath, _ = QFileDialog.getOpenFileName(self, "Select the picture", "", "Images (*.png *.jpg)")
+        filepaths, _ = QFileDialog.getOpenFileNames(self, "Select the picture", "", "Images (*.png *.jpg)")
 
-        if filepath:
-            original_name, unique_name = file_manager.import_photo(filepath)
-            tags = detector.detect_tags(filepath)
-            database_manager.add_photo(original_name, unique_name, tags)
+        if filepaths:
+            for filepath in filepaths:
+                original_name, unique_name = file_manager.import_photo(filepath)
+                tags = detector.detect_tags(filepath)
+                database_manager.add_photo(original_name, unique_name, tags)
 
             self.update_photos_list(self.search_bar.text())
 
