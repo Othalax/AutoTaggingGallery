@@ -1,3 +1,4 @@
 yolov8n-oiv7.pt
 ./example_pictures
 gallery.db
+/dist/
