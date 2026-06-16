@@ -82,6 +82,7 @@ class AutoTaggingGallery(QMainWindow):
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setWidget(self.gallery_widget)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         main_layout.addLayout(menu_layout)
         main_layout.addWidget(self.scroll_area, stretch=2)
@@ -97,6 +98,7 @@ class AutoTaggingGallery(QMainWindow):
         self.current_row = 0
         self.current_col = 0
         self.max_columns = 10
+        self.max_rows = 6
 
         self.current_photos = []
         self.photo_generator = None
@@ -108,7 +110,9 @@ class AutoTaggingGallery(QMainWindow):
         super().showEvent(event)
 
         available_width = self.scroll_area.viewport().width()
-        self.max_columns = max(1, available_width // 100)
+        self.max_columns = max(1, available_width // 105)
+        available_height = self.scroll_area.viewport().height()
+        self.max_rows = max(1, available_height // 105)
 
         self.update_photos_list(self.search_bar.text())
 
@@ -116,7 +120,9 @@ class AutoTaggingGallery(QMainWindow):
         super().resizeEvent(event)
 
         available_width = self.scroll_area.viewport().width()
-        new_max_columns = max(1, available_width // 100)
+        new_max_columns = max(1, available_width // 105)
+        available_height = self.scroll_area.viewport().height()
+        self.max_rows = max(1, available_height // 105)
 
         if new_max_columns != self.max_columns:
             self.max_columns = new_max_columns
@@ -202,8 +208,9 @@ class AutoTaggingGallery(QMainWindow):
         self.photo_details = PhotoDetails(filepath)
         self.photo_details.exec()
 
-    def delete_image(self, filepath):
-        fileManager.delete_photo(filepath, database_manager, self.current_photos)
+    def delete_image(self, filepath: str):
+        fileManager.delete_photo(filepath)
+        database_manager.delete_photo_by_filepath(filepath)
         self.update_photos_list()
 
     def clear_gallery(self):
@@ -235,8 +242,9 @@ class AutoTaggingGallery(QMainWindow):
         else:
             self.current_photos = database_manager.get_all_photos()
 
+        batch_size = self.max_columns * self.max_rows
         self.photo_generator = file_manager.get_photos(
-            self.current_photos, batch_size=16, database_manager=database_manager
+            self.current_photos, batch_size=batch_size, database_manager=database_manager
         )
 
         self.load_next_batch()

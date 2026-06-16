@@ -138,11 +138,19 @@ class DatabaseManager:
             cursor.execute(query)
             return [dict(row) for row in cursor.fetchall()]
 
-    def delete_photo(self, photo_id):
+    def delete_photo(self, photo_id: int):
         query = "DELETE FROM photos WHERE id = ?"
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(query, (photo_id,))
+            conn.commit()
+
+    def delete_photo_by_filepath(self, filepath: str):
+        stored_name = os.path.basename(filepath)
+        query = "DELETE FROM photos WHERE stored_name = ?"
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(query, (stored_name,))
             conn.commit()
 
     def get_original_name(self, filepath):
