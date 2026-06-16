@@ -2,7 +2,7 @@ import sys
 from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLineEdit, QGridLayout, QFileDialog,
                                QScrollArea, QLabel, QMenu, QDialog, QMessageBox)
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QUrl, QMimeData
 from PySide6.QtGui import QPixmap
 import database
 import fileManager
@@ -195,12 +195,23 @@ class AutoTaggingGallery(QMainWindow):
     def show_image_options(self, filepath):
         menu = QMenu(self)
         action_view = menu.addAction("Show details")
+        action_copy = menu.addAction("Copy to clipboard")
+        menu.addSeparator()
         action_delete = menu.addAction("Delete")
 
         action = menu.exec(self.cursor().pos())
 
         if action == action_view:
             self.show_image_details(filepath)
+
+        elif action == action_copy:
+            mime_data = QMimeData()
+            url = QUrl.fromLocalFile(filepath)
+            mime_data.setUrls([url])
+
+            clipboard = QApplication.clipboard()
+            clipboard.setMimeData(mime_data)
+
         elif action == action_delete:
             self.delete_image(filepath)
 
@@ -227,12 +238,18 @@ class AutoTaggingGallery(QMainWindow):
         filepaths, _ = QFileDialog.getOpenFileNames(self, "Select the picture", "", "Images (*.png *.jpg)")
 
         if filepaths:
-            for filepath in filepaths:
-                original_name, unique_name = file_manager.import_photo(filepath)
-                tags = detector.detect_tags(filepath)
-                database_manager.add_photo(original_name, unique_name, tags)
+            QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+            QApplication.processEvents()
 
-            self.update_photos_list(self.search_bar.text())
+            try:
+                for filepath in filepaths:
+                    original_name, unique_name = file_manager.import_photo(filepath)
+                    tags = detector.detect_tags(filepath)
+                    database_manager.add_photo(original_name, unique_name, tags)
+
+                self.update_photos_list(self.search_bar.text())
+            finally:
+                QApplication.restoreOverrideCursor()
 
     def update_photos_list(self, filter_text=""):
         self.clear_gallery()
