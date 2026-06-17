@@ -2,11 +2,12 @@ import sys
 from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLineEdit, QGridLayout, QFileDialog,
                                QScrollArea, QLabel, QMenu, QDialog, QMessageBox)
-from PySide6.QtCore import Qt, QUrl, QMimeData
-from PySide6.QtGui import QPixmap
+from PySide6.QtCore import Qt, QUrl, QMimeData, QSize
+from PySide6.QtGui import QPixmap, QImageReader
 import database
 import fileManager
 import detection
+import workers
 
 
 class PhotoDetails(QDialog):
@@ -163,21 +164,30 @@ class AutoTaggingGallery(QMainWindow):
         label = QLabel()
         label.setProperty("filepath", filepath)
         label.installEventFilter(self)
-        pixmap = QPixmap(filepath)
 
-        size = min(pixmap.width(), pixmap.height())
+        reader = QImageReader(filepath)
+        reader.setAutoTransform(True)
 
-        x = (pixmap.width() - size) // 2
-        y = (pixmap.height() - size) // 2
+        orig_size = reader.size()
+        if orig_size.isValid():
+            w, h = orig_size.width(), orig_size.height()
+            if w > h:
+                reader.setScaledSize(QSize(int(100 * w / h), 100))
+            else:
+                reader.setScaledSize(QSize(100, int(100 * h / w)))
 
-        cropped_pixmap = pixmap.copy(x, y, size, size)
-        scaled_pixmap = cropped_pixmap.scaled(
-            100, 100,
-            Qt.AspectRatioMode.IgnoreAspectRatio,
-            Qt.TransformationMode.SmoothTransformation
-        )
+        image = reader.read()
 
-        label.setPixmap(scaled_pixmap)
+        if not image.isNull():
+            pixmap = QPixmap.fromImage(image)
+            size = min(pixmap.width(), pixmap.height())
+            x = (pixmap.width() - size) // 2
+            y = (pixmap.height() - size) // 2
+            cropped_pixmap = pixmap.copy(x, y, size, size)
+            label.setPixmap(cropped_pixmap)
+        else:
+            label.setText("Błąd")
+
         label.setStyleSheet("border: 1px solid #ccc; padding: 1px; background: #f0f0f0;")
         label.setFixedSize(100, 100)
 
@@ -227,9 +237,50 @@ class AutoTaggingGallery(QMainWindow):
         self.photo_details.exec()
 
     def delete_image(self, filepath: str):
-        fileManager.delete_photo(filepath)
-        database_manager.delete_photo_by_filepath(filepath)
-        self.update_photos_list()
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+
+        self.delete_worker = workers.DeleteWorker(filepath, database_manager)
+        self.delete_worker.finished.connect(self.on_delete_finished)
+        self.delete_worker.error.connect(self.on_worker_error)
+        self.delete_worker.start()
+
+    def on_delete_finished(self, filepath):
+        QApplication.restoreOverrideCursor()
+        for i in range(self.gallery_layout.count()):
+            item = self.gallery_layout.itemAt(i)
+            if item:
+                widget = item.widget()
+                if widget and widget.property("filepath") == filepath:
+                    widget.setParent(None)
+                    widget.deleteLater()
+                    break
+
+        self.reorganize_grid()
+
+    def add_file(self):
+        filepaths, _ = QFileDialog.getOpenFileNames(self, "Select the picture", "", "Images (*.png *.jpg)")
+
+        if filepaths:
+            QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+            self.add_button.setEnabled(False)
+
+            self.import_worker = workers.ImportWorker(filepaths, file_manager, database_manager, detector)
+            self.import_worker.finished.connect(self.on_import_finished)
+            self.import_worker.error.connect(self.on_worker_error)
+            self.import_worker.start()
+
+    def on_import_finished(self):
+
+        QApplication.restoreOverrideCursor()
+        self.add_button.setEnabled(True)
+        self.update_photos_list(self.search_bar.text())
+
+    def on_worker_error(self, err_msg):
+        QApplication.restoreOverrideCursor()
+        if hasattr(self, 'add_button'):
+            self.add_button.setEnabled(True)
+        QMessageBox.critical(self, "Error", f"An error occurred in background task: {err_msg}")
+
 
     def clear_gallery(self):
         while self.gallery_layout.count():
@@ -241,22 +292,6 @@ class AutoTaggingGallery(QMainWindow):
         self.current_row = 0
         self.current_col = 0
 
-    def add_file(self):
-        filepaths, _ = QFileDialog.getOpenFileNames(self, "Select the picture", "", "Images (*.png *.jpg)")
-
-        if filepaths:
-            QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
-            QApplication.processEvents()
-
-            try:
-                for filepath in filepaths:
-                    original_name, unique_name = file_manager.import_photo(filepath)
-                    tags = detector.detect_tags(filepath)
-                    database_manager.add_photo(original_name, unique_name, tags)
-
-                self.update_photos_list(self.search_bar.text())
-            finally:
-                QApplication.restoreOverrideCursor()
 
     def update_photos_list(self, filter_text=""):
         self.clear_gallery()
