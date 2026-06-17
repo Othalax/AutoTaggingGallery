@@ -205,7 +205,15 @@ class AutoTaggingGallery(QMainWindow):
             self.current_row += 1
 
     def eventFilter(self, watched, event):
-        if event.type() == event.Type.MouseButtonPress:
+        if event.type() == event.Type.MouseButtonDblClick:
+            mouse_event = event
+            if mouse_event.button() == Qt.MouseButton.LeftButton:
+                filepath = watched.property("filepath")
+                if filepath:
+                    self.show_image_details(filepath)
+                    return True
+
+        elif event.type() == event.Type.MouseButtonPress:
             mouse_event = event
             if mouse_event.button() == Qt.MouseButton.RightButton:
                 filepath = watched.property("filepath")
