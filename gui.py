@@ -74,6 +74,12 @@ class AutoTaggingGallery(QMainWindow):
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText("Search by tag")
         menu_layout.addWidget(self.search_bar)
+
+        self.sort_order = "DESC"
+        self.sort_button = QPushButton("Sort: Newest")
+        self.sort_button.clicked.connect(self.toggle_sort_order)
+        menu_layout.addWidget(self.sort_button)
+
         self.add_button = QPushButton("Add picture")
         menu_layout.addWidget(self.add_button)
 
@@ -257,6 +263,16 @@ class AutoTaggingGallery(QMainWindow):
 
         self.reorganize_grid()
 
+    def toggle_sort_order(self):
+        if self.sort_order == "DESC":
+            self.sort_order = "ASC"
+            self.sort_button.setText("Sort: Oldest")
+        else:
+            self.sort_order = "DESC"
+            self.sort_button.setText("Sort: Newest")
+
+        self.update_photos_list(self.search_bar.text())
+
     def add_file(self):
         filepaths, _ = QFileDialog.getOpenFileNames(self, "Select the picture", "", "Images (*.png *.jpg)")
 
@@ -297,9 +313,9 @@ class AutoTaggingGallery(QMainWindow):
         self.clear_gallery()
 
         if filter_text.strip():
-            self.current_photos = database_manager.get_photos_by_tag(filter_text)
+            self.current_photos = database_manager.get_photos_by_tag(filter_text, self.sort_order)
         else:
-            self.current_photos = database_manager.get_all_photos()
+            self.current_photos = database_manager.get_all_photos(self.sort_order)
 
         batch_size = self.max_columns * self.max_rows
         self.photo_generator = file_manager.get_photos(

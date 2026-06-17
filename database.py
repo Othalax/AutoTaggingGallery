@@ -99,15 +99,17 @@ class DatabaseManager:
         finally:
             conn.close()
 
-    def get_photos_by_tag(self, tag_name):
+    def get_photos_by_tag(self, tag_name, order="DESC"):
+        ord = "ASC" if order.upper() == "ASC" else "DESC"
+
         tag_name = tag_name.lower().strip()
-        query = """
+        query = f"""
             SELECT p.id, p.original_name, p.stored_name, p.upload_date 
             FROM photos p
             JOIN photo_tags pt ON p.id = pt.photo_id
             JOIN tags t ON pt.tag_id = t.id
             WHERE t.tag_name LIKE ?
-            ORDER BY p.id DESC
+            ORDER BY p.upload_date {ord}
         """
         with self.get_connection() as conn:
             cursor = conn.cursor()
@@ -128,11 +130,13 @@ class DatabaseManager:
             cursor.execute(query, (stored_name,))
             return [row["tag_name"] for row in cursor.fetchall()]
 
-    def get_all_photos(self):
-        query = """
+    def get_all_photos(self, order="DESC"):
+        ord = "ASC" if order.upper() == "ASC" else "DESC"
+
+        query = f"""
             SELECT id, original_name, stored_name, upload_date 
             FROM photos 
-            ORDER BY id DESC
+            ORDER BY upload_date {ord}
         """
         with self.get_connection() as conn:
             cursor = conn.cursor()
