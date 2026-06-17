@@ -11,8 +11,8 @@ import workers
 
 
 class PhotoDetails(QDialog):
-    def __init__(self, filepath):
-        super().__init__()
+    def __init__(self, filepath, parent=None):
+        super().__init__(parent)
         self.setWindowTitle("Photo details")
         self.resize(300, 200)
         self.filepath = filepath
@@ -28,26 +28,36 @@ class PhotoDetails(QDialog):
             Qt.TransformationMode.SmoothTransformation
         )
         label.setPixmap(scaled_pixmap)
+
         tags_list = database_manager.get_tags_for_photo(filepath)
-        tags_str = ""
-        for tag in tags_list:
-            if tags_str:
-                tags_str += ", "
-            tags_str += tag
-        tags = QLabel("Tags: " + tags_str)
+        links = [f'<a href="{tag}" style="color: #2196F3; text-decoration: none;">{tag}</a>' for tag in tags_list]
+        tags_html = "<b>Tags:</b> " + ", ".join(links)
+
+        tags_list = database_manager.get_tags_for_photo(filepath)
+
+        self.tags_label = QLabel(tags_html)
+        self.tags_label.setTextFormat(Qt.TextFormat.RichText)
+        self.tags_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
+        self.tags_label.setOpenExternalLinks(False)
+        self.tags_label.linkActivated.connect(self.on_tag_clicked)
+
         download_button = QPushButton("Download photo")
 
         layout.addWidget(label)
-        layout.addWidget(tags)
+        layout.addWidget(self.tags_label)
         layout.addWidget(download_button)
 
         self.setLayout(layout)
 
         download_button.clicked.connect(self.download_photo)
 
+    def on_tag_clicked(self, link):
+        if self.parent():
+            self.parent().search_bar.setText(link)
+        self.close()
+
     def download_photo(self):
         original_name = database_manager.get_original_name(self.filepath)
-
 
         dest_path, _ = QFileDialog.getSaveFileName(
             self,
@@ -247,7 +257,7 @@ class AutoTaggingGallery(QMainWindow):
             self.delete_image(filepath)
 
     def show_image_details(self, filepath):
-        self.photo_details = PhotoDetails(filepath)
+        self.photo_details = PhotoDetails(filepath, self)
         self.photo_details.exec()
 
     def delete_image(self, filepath: str):
