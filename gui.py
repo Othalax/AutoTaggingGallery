@@ -33,8 +33,6 @@ class PhotoDetails(QDialog):
         links = [f'<a href="{tag}" style="color: #2196F3; text-decoration: none;">{tag}</a>' for tag in tags_list]
         tags_html = "<b>Tags:</b> " + ", ".join(links)
 
-        tags_list = database_manager.get_tags_for_photo(filepath)
-
         self.tags_label = QLabel(tags_html)
         self.tags_label.setTextFormat(Qt.TextFormat.RichText)
         self.tags_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)

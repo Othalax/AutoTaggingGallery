@@ -1,10 +1,10 @@
 import os
 import pytest
 from unittest.mock import MagicMock, patch
-
 import database
 import fileManager
 import detection
+from workers import ImportWorker
 
 @pytest.fixture(scope="function")
 def isolated_env(tmp_path, monkeypatch):
@@ -112,3 +112,17 @@ def test_detect_tags_filtering(mock_yolo_class, isolated_env):
     assert len(tags) == 1
     assert "polar bear" in tags
     assert "penguin" not in tags
+
+
+def test_import_worker(qtbot):
+    mock_file_manager = MagicMock()
+    mock_file_manager.import_photo.return_value = ("test.jpg", "unique.jpg")
+    mock_detector = MagicMock()
+    mock_database = MagicMock()
+
+    worker = ImportWorker(["fake_path.jpg"], mock_file_manager, mock_database, mock_detector)
+
+    with qtbot.waitSignal(worker.finished, timeout=2000):
+        worker.start()
+
+    mock_database.add_photo.assert_called_once()
