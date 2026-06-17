@@ -112,23 +112,30 @@ class AutoTaggingGallery(QMainWindow):
         available_width = self.scroll_area.viewport().width()
         self.max_columns = max(1, available_width // 105)
         available_height = self.scroll_area.viewport().height()
-        self.max_rows = max(1, available_height // 105)
+        self.max_rows = max(1, available_height // 105) + 1
 
         self.update_photos_list(self.search_bar.text())
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
 
-        available_width = self.scroll_area.viewport().width()
-        new_max_columns = max(1, available_width // 105)
-        available_height = self.scroll_area.viewport().height()
-        self.max_rows = max(1, available_height // 105)
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        QApplication.processEvents()
+        try:
+            available_width = self.scroll_area.viewport().width()
+            new_max_columns = max(1, available_width // 105)
+            available_height = self.scroll_area.viewport().height()
+            self.max_rows = max(1, available_height // 105) + 1
 
-        if new_max_columns != self.max_columns:
-            self.max_columns = new_max_columns
-            self.reorganize_grid()
+            if new_max_columns < self.max_columns:
+                self.max_columns = new_max_columns
+                self.reorganize_grid()
 
-        super().resizeEvent(event)
+            if new_max_columns > self.max_columns:
+                self.max_columns = new_max_columns
+                self.update_photos_list(self.search_bar.text())
+        finally:
+            QApplication.restoreOverrideCursor()
 
     def reorganize_grid(self):
         widgets = []
