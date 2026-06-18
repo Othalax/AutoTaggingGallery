@@ -200,7 +200,7 @@ class AutoTaggingGallery(QMainWindow):
             cropped_pixmap = pixmap.copy(x, y, size, size)
             label.setPixmap(cropped_pixmap)
         else:
-            label.setText("Błąd")
+            label.setText("Error")
 
         label.setStyleSheet("border: 1px solid #ccc; padding: 1px; background: #f0f0f0;")
         label.setFixedSize(100, 100)
