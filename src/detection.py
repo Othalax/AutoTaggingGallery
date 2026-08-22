@@ -8,7 +8,7 @@ class Detector:
         self.storage_dir = os.path.join(appdata_dir, "AutoTaggingGallery", 'yolov8n-oiv7.pt')
         self.model = YOLO(self.storage_dir)
         config = configparser.ConfigParser()
-        config.read('config.ini')
+        config.read('../config.ini')
         self.confidence_threshold = float(config['Detector']['confidence_threshold'])
 
     def detect_tags(self, filepath):

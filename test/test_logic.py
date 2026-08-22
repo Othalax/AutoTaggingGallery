@@ -1,10 +1,8 @@
 import os
 import pytest
 from unittest.mock import MagicMock, patch
-import database
-import fileManager
-import detection
-from workers import ImportWorker
+from src import database, detection, fileManager
+from src.workers import ImportWorker
 
 @pytest.fixture(scope="function")
 def isolated_env(tmp_path, monkeypatch):

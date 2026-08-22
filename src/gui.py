@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton, QHBoxLayo
                                QScrollArea, QLabel, QMenu, QDialog, QMessageBox)
 from PySide6.QtCore import Qt, QUrl, QMimeData, QSize
 from PySide6.QtGui import QPixmap, QImageReader
-import database
+from src import database
 import fileManager
 import detection
 import workers
@@ -120,6 +120,8 @@ class AutoTaggingGallery(QMainWindow):
         self.update_photos_list()
 
         self.photo_details = None
+        self.delete_worker = None
+        self.import_worker = None
 
     def showEvent(self, event):
         super().showEvent(event)
